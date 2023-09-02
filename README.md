@@ -7,6 +7,13 @@ https://github.com/cesarviana/timelogconverter/assets/6049357/b1403dc3-092a-41cc
 
 2. Track time
 
+First entry for the story:
+- Start a new story entry using "Start time" button in Shortcut. 
+- Add the related tags (bug, feature, or chore)
+
+New entries: 
+- Find a previous entry on toggl and click on it. Then hit start. In this way the previous added tags are re-used.
+
 https://github.com/cesarviana/timelogconverter/assets/6049357/b61c23c8-51e3-4451-ac30-15cd767d3fb7
 
 3. Export toggl "Detailed" time entries
