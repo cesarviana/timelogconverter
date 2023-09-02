@@ -5,7 +5,12 @@
   "main": "index.js",
   "author": "Cesar Viana",
   "license": "MIT",
+  "scripts": {
+    "test": "node ./node_modules/mocha/bin/mocha *.test.js"
+  },
   "dependencies": {
+    "chai": "^4.3.8",
+    "chai-as-promised": "^7.1.1",
     "csv-parser": "^3.0.0",
     "csv-writer": "^1.6.0",
     "dayjs": "^1.11.9"

@@ -5,72 +5,80 @@ const weekOfYear = require("dayjs/plugin/weekOfYear");
 dayjs.extend(weekOfYear);
 const createCsvWriter = require("csv-writer").createObjectCsvWriter;
 
-function convertCSV(inputFileName) {
+async function convertCSV(inputFileName) {
+  console.log("Reading " + inputFileName);
+
+  const taskMap = await _readData(inputFileName);
+  const outputData = await _writeData(taskMap);
+  return outputData;
+}
+
+async function _writeData(taskMap) {
+  const outputData = Array.from(taskMap.values()).map((entry) => ({
+    ...entry,
+    duration: formatDuration(entry.duration),
+  }));
+
+  const outputFileName = `output.csv`;
+  const csvWriter = createCsvWriter({
+    path: outputFileName,
+    header: [
+      { id: "week", title: "Week" },
+      { id: "month", title: "Month" },
+      { id: "quarter", title: "Quarter" },
+      { id: "storyId", title: "Story ID" },
+      { id: "storyTitle", title: "Story Title" },
+      { id: "type", title: "Type" },
+      { id: "duration", title: "Hours" },
+    ],
+  });
+
+  await csvWriter.writeRecords(outputData);
+  console.log(`Conversion complete. Output written to ${outputFileName}`);
+  return outputData;
+}
+
+async function _readData(inputFileName) {
   const taskMap = new Map();
-  console.log("reading " + inputFileName);
-  fs.createReadStream(inputFileName)
-    .pipe(csv())
-    .on("data", (row) => {
-      const tags = row.Tags.toLowerCase();
-      const startDate = dayjs(row["Start date"]);
+  const stream = fs.createReadStream(inputFileName).pipe(csv());
 
-      const taskIdMatch = row.Description.match(/#(\d+)/);
-      if (!taskIdMatch) return;
+  for await (const row of stream) {
+    const tags = row.Tags.toLowerCase();
+    const startDate = dayjs(row["Start date"]);
 
-      const storyId = taskIdMatch[1];
-      const storyTitle = row.Description.replace(`#${storyId} - `, "");
+    const taskIdMatch = row.Description.match(/#(\d+)/);
+    if (!taskIdMatch) continue;
 
-      const pattern = /chore|bug|feature/;
-      const type = pattern.exec(tags)?.[0] ?? "### Missing tag ###";
-      if (type.includes("Missing")) {
-        throw new Error(JSON.stringify(row) + " missing tag");
-      }
+    const storyId = taskIdMatch[1];
+    const storyTitle = row.Description.replace(`#${storyId} - `, "");
 
-      const isNewEntry = !taskMap.has(storyId);
-      if (isNewEntry) {
-        const currentQuarter = Math.ceil(startDate.month() / 3);
-        taskMap.set(storyId, {
-          month: startDate.format("YYYY-MM"),
-          week: `${startDate.year()}-${startDate.week()}`,
-          quarter: `${startDate.year()}-${currentQuarter}`,
-          storyId,
-          storyTitle,
-          type,
-          duration: 0,
-        });
-      }
-      taskMap.get(storyId).duration += getDurationInSeconds(row.Duration);
-    })
-    .on("end", () => {
-      const outputData = Array.from(taskMap.values()).map((entry) => ({
-        ...entry,
-        duration: formatDuration(entry.duration),
-      }));
+    const pattern = /chore|bug|feature/;
 
-      const outputFileName = `output.csv`;
-      const csvWriter = createCsvWriter({
-        path: outputFileName,
-        header: [
-          { id: "week", title: "Week" },
-          { id: "month", title: "Month" },
-          { id: "quarter", title: "Quarter" },
-          { id: "storyId", title: "Story ID" },
-          { id: "storyTitle", title: "Story Title" },
-          { id: "type", title: "Type" },
-          { id: "duration", title: "Hours" },
-        ],
+    if (!pattern.test(tags)) {
+      const badRow = JSON.stringify(row) + " missing tag";
+      throw new Error(
+        `Missing tags. All entries must contain "Chore", "Bug" or "Feature". \n ${badRow}`
+      );
+    }
+
+    const type = tags.match(pattern)[0];
+
+    if (!taskMap.has(storyId)) {
+      const currentQuarter = Math.ceil(startDate.month() / 3);
+      taskMap.set(storyId, {
+        month: startDate.format("YYYY-MM"),
+        week: `${startDate.year()}-${startDate.week()}`,
+        quarter: `${startDate.year()}-${currentQuarter}`,
+        storyId,
+        storyTitle,
+        type,
+        duration: 0,
       });
-      csvWriter
-        .writeRecords(outputData)
-        .then(() => {
-          console.log(
-            `Conversion complete. Output written to ${outputFileName}`
-          );
-        })
-        .catch((error) => {
-          console.error("Error writing output:", error);
-        });
-    });
+    }
+
+    taskMap.get(storyId).duration += getDurationInSeconds(row.Duration);
+  }
+  return taskMap;
 }
 
 function getDurationInSeconds(duration) {
