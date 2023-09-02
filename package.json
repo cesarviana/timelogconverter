@@ -1,0 +1,16 @@
+{
+  "name": "timelog",
+  "version": "1.0.0",
+  "description": "Time log helper",
+  "main": "index.js",
+  "author": "Cesar Viana",
+  "license": "MIT",
+  "dependencies": {
+    "csv-parser": "^3.0.0",
+    "csv-writer": "^1.6.0",
+    "dayjs": "^1.11.9"
+  },
+  "devDependencies": {
+    "mocha": "^10.2.0"
+  }
+}
