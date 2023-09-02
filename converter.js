@@ -5,12 +5,59 @@ const weekOfYear = require("dayjs/plugin/weekOfYear");
 dayjs.extend(weekOfYear);
 const createCsvWriter = require("csv-writer").createObjectCsvWriter;
 
+const MISSING_TYPE = "### Missing type ###";
+
 async function convertCSV(inputFileName) {
   console.log("Reading " + inputFileName);
 
   const taskMap = await _readData(inputFileName);
   const outputData = await _writeData(taskMap);
   return outputData;
+}
+
+async function _readData(inputFileName) {
+  const storiesMap = new Map();
+  const stream = fs.createReadStream(inputFileName).pipe(csv());
+
+  for await (const row of stream) {
+    const tags = row.Tags.toLowerCase();
+    const startDate = dayjs(row["Start date"]);
+
+    const taskIdMatch = row.Description.match(/#(\d+)/);
+    if (!taskIdMatch) continue;
+
+    const storyId = taskIdMatch[1];
+    if (!storiesMap.has(storyId)) {
+      const storyTitle = row.Description.replace(`#${storyId} - `, "");
+      const currentQuarter = Math.ceil(startDate.month() / 3);
+      storiesMap.set(storyId, {
+        month: startDate.format("YYYY-MM"),
+        week: `${startDate.year()}-${startDate.week()}`,
+        quarter: `${startDate.year()}-${currentQuarter}`,
+        type: MISSING_TYPE,
+        storyId,
+        storyTitle,
+        duration: 0,
+      });
+    }
+
+    const story = storiesMap.get(storyId);
+    story.duration += getDurationInSeconds(row.Duration);
+
+    if (story.type === MISSING_TYPE) {
+      const pattern = /chore|bug|feature/;
+      const typeFound = pattern.test(tags);
+      if (typeFound) {
+        story.type = tags.match(pattern)[0];
+      } else {
+        const badRow = JSON.stringify(row) + " missing tag";
+        console.warn(
+          `Missing tags. All entries must contain "Chore", "Bug" or "Feature". \n ${badRow}`
+        );
+      }
+    }
+  }
+  return storiesMap;
 }
 
 async function _writeData(taskMap) {
@@ -36,49 +83,6 @@ async function _writeData(taskMap) {
   await csvWriter.writeRecords(outputData);
   console.log(`Conversion complete. Output written to ${outputFileName}`);
   return outputData;
-}
-
-async function _readData(inputFileName) {
-  const taskMap = new Map();
-  const stream = fs.createReadStream(inputFileName).pipe(csv());
-
-  for await (const row of stream) {
-    const tags = row.Tags.toLowerCase();
-    const startDate = dayjs(row["Start date"]);
-
-    const taskIdMatch = row.Description.match(/#(\d+)/);
-    if (!taskIdMatch) continue;
-
-    const storyId = taskIdMatch[1];
-    const storyTitle = row.Description.replace(`#${storyId} - `, "");
-
-    const pattern = /chore|bug|feature/;
-
-    if (!pattern.test(tags)) {
-      const badRow = JSON.stringify(row) + " missing tag";
-      throw new Error(
-        `Missing tags. All entries must contain "Chore", "Bug" or "Feature". \n ${badRow}`
-      );
-    }
-
-    const type = tags.match(pattern)[0];
-
-    if (!taskMap.has(storyId)) {
-      const currentQuarter = Math.ceil(startDate.month() / 3);
-      taskMap.set(storyId, {
-        month: startDate.format("YYYY-MM"),
-        week: `${startDate.year()}-${startDate.week()}`,
-        quarter: `${startDate.year()}-${currentQuarter}`,
-        storyId,
-        storyTitle,
-        type,
-        duration: 0,
-      });
-    }
-
-    taskMap.get(storyId).duration += getDurationInSeconds(row.Duration);
-  }
-  return taskMap;
 }
 
 function getDurationInSeconds(duration) {

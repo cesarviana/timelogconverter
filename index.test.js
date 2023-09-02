@@ -1,5 +1,5 @@
-const chai = require('chai');
-const chaiAsPromised = require('chai-as-promised');
+const chai = require("chai");
+const chaiAsPromised = require("chai-as-promised");
 chai.use(chaiAsPromised);
 const { expect } = chai;
 
@@ -17,13 +17,13 @@ async function writeRecords(records) {
 
 describe("test conversion", () => {
   beforeEach(async () => {
-    await fs.writeFile(TEST_FILE, '');
+    await fs.writeFile(TEST_FILE, "");
     csvWriter = createCsvWriter({
       header: ["Description", "Start date", "Duration", "Tags"],
       path: TEST_FILE,
     });
   });
-  
+
   it("converts correctly", async () => {
     await writeRecords([
       ["#38955 - Git Work", "2023-08-28", "00:15:44", "Chore, Questionnaires"],
@@ -51,12 +51,23 @@ describe("test conversion", () => {
     expect(row.duration, "Sum duration").to.be.equal("1.00");
   });
 
-  it("throws exception if missing tags", async () => {
+  it("uses available type even if tags are empty for some entry", async () => {
     await writeRecords([
-      ["#38955 - Git Work", "2023-08-28", "00:15:00", "Questionnaires"],
+      ["#38955 - Git Work", "2023-08-28", "00:15:00", "Chore, Questionnaires"],
+      ["#38955 - Git Work", "2023-08-28", "00:45:00", ""],
     ]);
-    await expect(convertCSV(TEST_FILE)).to.eventually.be.rejectedWith(
-      /Missing tags\. All entries must contain "Chore", "Bug" or "Feature"/
-    );
+    const outputData = await convertCSV(TEST_FILE);
+    const row = outputData[0];
+    expect(row.type).to.equal("chore");
+  });
+  
+  it("outputs ### Missing type ### if all entries are empty in tag column", async () => {
+    await writeRecords([
+      ["#38955 - Git Work", "2023-08-28", "00:15:00", ""],
+      ["#38955 - Git Work", "2023-08-28", "00:45:00", ""],
+    ]);
+    const outputData = await convertCSV(TEST_FILE);
+    const row = outputData[0];
+    expect(row.type).to.equal("### Missing type ###");
   });
 });
