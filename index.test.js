@@ -7,7 +7,7 @@ const createCsvWriter = require("csv-writer").createArrayCsvWriter;
 const fs = require("fs").promises;
 const { convertCSV } = require("./converter");
 
-const TEST_FILE = "toggle_test.csv";
+const TEST_FILE = "toggl_test.csv";
 
 let csvWriter;
 
