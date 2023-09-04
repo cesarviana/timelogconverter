@@ -5,7 +5,7 @@ const { expect } = chai;
 
 const createCsvWriter = require("csv-writer").createArrayCsvWriter;
 const fs = require("fs").promises;
-const { convertCSV } = require("./converter");
+const { convertCSV, convertToggl } = require("../converter");
 
 const TEST_FILE = "toggl_test.csv";
 
@@ -69,5 +69,10 @@ describe("test conversion", () => {
     const outputData = await convertCSV(TEST_FILE);
     const row = outputData[0];
     expect(row.type).to.equal("### Missing type ###");
+  });
+
+  it('converts data from toggl', async () => {
+    const outputData = await convertToggl();
+    expect(outputData).to.be.an('array')
   });
 });

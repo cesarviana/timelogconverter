@@ -1,7 +1,7 @@
-const fs = require("fs");
-const csv = require("csv-parser");
 const dayjs = require("dayjs");
 const weekOfYear = require("dayjs/plugin/weekOfYear");
+const CsvTimelogProvider = require("./providers/CsvTimelogProvider");
+const { TogglWeekTimelogProvider } = require("./providers/TimelogProvider");
 dayjs.extend(weekOfYear);
 const createCsvWriter = require("csv-writer").createObjectCsvWriter;
 
@@ -9,26 +9,34 @@ const MISSING_TYPE = "### Missing type ###";
 
 async function convertCSV(inputFileName) {
   console.log("Reading " + inputFileName);
-
-  const taskMap = await _readData(inputFileName);
-  const outputData = await _writeData(taskMap);
-  return outputData;
+  const csvTimelogProvider = new CsvTimelogProvider(inputFileName);
+  const timelogData = await _summarizeDetailedDataToWeekTimelog(
+    csvTimelogProvider.getTimeEntries()
+  );
+  await _writeData(timelogData);
+  return timelogData;
 }
 
-async function _readData(inputFileName) {
+async function convertToggl() {
+  const togglWeekTimelogProvider = new TogglWeekTimelogProvider();
+  const timelogData = await _summarizeDetailedDataToWeekTimelog(
+    togglWeekTimelogProvider.getTimeEntries()
+  );
+  return timelogData;
+}
+
+async function _summarizeDetailedDataToWeekTimelog(rowsStream) {
   const storiesMap = new Map();
-  const stream = fs.createReadStream(inputFileName).pipe(csv());
+  for await (const row of rowsStream) {
+    const tags = row.tags.toLowerCase();
+    const startDate = dayjs(row.startDate);
 
-  for await (const row of stream) {
-    const tags = row.Tags.toLowerCase();
-    const startDate = dayjs(row["Start date"]);
-
-    const taskIdMatch = row.Description.match(/#(\d+)/);
+    const taskIdMatch = row.description.match(/#(\d+)/);
     if (!taskIdMatch) continue;
 
     const storyId = taskIdMatch[1];
     if (!storiesMap.has(storyId)) {
-      const storyTitle = row.Description.replace(`#${storyId} - `, "");
+      const storyTitle = row.description.replace(`#${storyId} - `, "");
       const currentQuarter = Math.ceil(startDate.month() / 3);
       storiesMap.set(storyId, {
         month: startDate.format("YYYY-MM"),
@@ -42,7 +50,7 @@ async function _readData(inputFileName) {
     }
 
     const story = storiesMap.get(storyId);
-    story.duration += getDurationInSeconds(row.Duration);
+    story.duration += _getDurationInSeconds(row.duration);
 
     if (story.type === MISSING_TYPE) {
       const pattern = /chore|bug|feature/;
@@ -57,15 +65,26 @@ async function _readData(inputFileName) {
       }
     }
   }
-  return storiesMap;
+  const outputData = Array.from(storiesMap.values()).map((entry) => ({
+    ...entry,
+    duration: _formatDuration(entry.duration),
+  }));
+  return outputData;
 }
 
-async function _writeData(taskMap) {
-  const outputData = Array.from(taskMap.values()).map((entry) => ({
-    ...entry,
-    duration: formatDuration(entry.duration),
-  }));
+function _getDurationInSeconds(duration) {
+  const [hours, minutes, seconds] = duration.split(":").map(Number);
+  return hours * 3600 + minutes * 60 + seconds;
+}
 
+function _formatDuration(seconds) {
+  const hours = Math.floor(seconds / 3600);
+  const minutes = Math.floor((seconds % 3600) / 60);
+  const decimalMinutes = (minutes / 60).toFixed(2).replace("0.", "");
+  return `${hours}.${decimalMinutes}`;
+}
+
+async function _writeData(outputData) {
   const outputFileName = `output.csv`;
   const csvWriter = createCsvWriter({
     path: outputFileName,
@@ -85,18 +104,6 @@ async function _writeData(taskMap) {
   return outputData;
 }
 
-function getDurationInSeconds(duration) {
-  const [hours, minutes, seconds] = duration.split(":").map(Number);
-  return hours * 3600 + minutes * 60 + seconds;
-}
-
-function formatDuration(seconds) {
-  const hours = Math.floor(seconds / 3600);
-  const minutes = Math.floor((seconds % 3600) / 60);
-  const decimalMinutes = (minutes / 60).toFixed(2).replace("0.", "");
-  return `${hours}.${decimalMinutes}`;
-}
-
 module.exports = {
-  convertCSV,
+  convertCSV, convertToggl
 };
