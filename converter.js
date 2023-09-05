@@ -1,7 +1,7 @@
 const dayjs = require("dayjs");
 const weekOfYear = require("dayjs/plugin/weekOfYear");
 const CsvTimelogProvider = require("./providers/CsvTimelogProvider");
-const { TogglWeekTimelogProvider } = require("./providers/TimelogProvider");
+const TogglWeekTimelogProvider = require("./providers/TogglWeekTimelogProvider");
 dayjs.extend(weekOfYear);
 const createCsvWriter = require("csv-writer").createObjectCsvWriter;
 
@@ -28,7 +28,7 @@ async function convertToggl() {
 async function _summarizeDetailedDataToWeekTimelog(rowsStream) {
   const storiesMap = new Map();
   for await (const row of rowsStream) {
-    const tags = row.tags.toLowerCase();
+    const tags = row.tags.join(',').toLowerCase();
     const startDate = dayjs(row.startDate);
 
     const taskIdMatch = row.description.match(/#(\d+)/);
@@ -50,7 +50,7 @@ async function _summarizeDetailedDataToWeekTimelog(rowsStream) {
     }
 
     const story = storiesMap.get(storyId);
-    story.duration += _getDurationInSeconds(row.duration);
+    story.duration += row.duration;
 
     if (story.type === MISSING_TYPE) {
       const pattern = /chore|bug|feature/;
@@ -70,11 +70,6 @@ async function _summarizeDetailedDataToWeekTimelog(rowsStream) {
     duration: _formatDuration(entry.duration),
   }));
   return outputData;
-}
-
-function _getDurationInSeconds(duration) {
-  const [hours, minutes, seconds] = duration.split(":").map(Number);
-  return hours * 3600 + minutes * 60 + seconds;
 }
 
 function _formatDuration(seconds) {

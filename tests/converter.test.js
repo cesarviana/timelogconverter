@@ -73,6 +73,6 @@ describe("test conversion", () => {
 
   it('converts data from toggl', async () => {
     const outputData = await convertToggl();
-    expect(outputData).to.be.an('array')
+    expect(outputData).to.be.an('array');
   });
 });

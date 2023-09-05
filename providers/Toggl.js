@@ -20,23 +20,27 @@ class Toggl {
       },
     });
   }
-  
+
   async getWeekEntries() {
     const end_date = dayjs().endOf("week").format("YYYY-MM-DD");
     const start_date = dayjs().startOf("week").format("YYYY-MM-DD");
-    try {
-      return await this.axiosInstance.post(
-        `reports/api/v3/workspace/${this.workspaceId}/search/time_entries`,
-        {
-          // client_ids: ["integer"],
-          start_date,
-          end_date,
-          user_ids: [this.userId],
-        }
-      );
-    } catch (error) {
-      console.error(error);
-    }
+    const response = await this.axiosInstance.post(
+      `reports/api/v3/workspace/${this.workspaceId}/search/time_entries`,
+      {
+        // client_ids: ["integer"],
+        start_date,
+        end_date,
+        user_ids: [this.userId],
+      }
+    );
+    return response.data;
+  }
+
+  async getTags() {
+    const response = await this.axiosInstance.get(
+      `/api/v9/workspaces/${this.workspaceId}/tags`
+    );
+    return response.data;
   }
 }
 

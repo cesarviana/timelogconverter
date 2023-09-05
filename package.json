@@ -6,7 +6,8 @@
   "author": "Cesar Viana",
   "license": "MIT",
   "scripts": {
-    "test": "node ./node_modules/mocha/bin/mocha --require dotenv/config tests/**/*.test.js"
+    "test": "node ./node_modules/mocha/bin/mocha --require dotenv/config tests/**/*.test.js",
+    "testGrep": "node ./node_modules/mocha/bin/mocha --require dotenv/config tests/**/*.test.js --grep TEST"
   },
   "dependencies": {
     "axios": "^1.5.0",
