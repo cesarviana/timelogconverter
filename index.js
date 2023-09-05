@@ -1,4 +1,11 @@
-const { convertCSV } = require("./converter");
+require('dotenv').config();
+const yargs = require('yargs/yargs')
+const { hideBin } = require('yargs/helpers')
+const argv = yargs(hideBin(process.argv)).argv
+const { convertCSV, convertToggl } = require("./converter");
 
-const inputFileName = process.argv[2];
-convertCSV(inputFileName);
+if (argv.csv) {
+  convertCSV(argv.csv);
+} else {
+  convertToggl();
+}

@@ -3,14 +3,26 @@
 This repository converts [TogglTrack](https://toggl.com/track/) entries to a new format.
 
 # Using this converter
+You can setup toggl integration or convert a csv file exported from toggl.
+In both ways the result is displayed in the terminal. Copy and paste it in the final spreadsheet.
+
+## With Toggl API integration
+Add a .env file with those properties
 ```
-  yarn // install dependencies
-  node index.js <your_toggl_exported_file.csv>
+TOGGL_API_KEY=<your_api_key>
+TOGGL_WORKSPACE_ID=<your_workspace_id>
+TOGGL_USER_ID=<your_user_id>
 ```
 
-This command outputs a file called `output.csv`. You can copy the rows and paste in your timelog tab.
+Run
+```
+  yarn toggl
+```
 
-https://github.com/cesarviana/timelogconverter/assets/6049357/c4c27244-20e9-4d3e-af63-17d00c8c53d4
+## With CSV exported file
+```
+  yarn csv <your_toggl_exported_file.csv>
+```
 
 # How to track hours
 ## Install [toggl extension](https://chrome.google.com/webstore/detail/toggl-track-productivity/oejgccbfbmkkpaidnkphaiaecficdnfn)
@@ -23,11 +35,10 @@ You don't need to add tags every time in toggl, but this is a good practice.
 
 https://github.com/cesarviana/timelogconverter/assets/6049357/b61c23c8-51e3-4451-ac30-15cd767d3fb7
 
-## Export toggl "Detailed" time entries
+# Exporting Toggl csv
+If you didn't setup Toggl integration, you need to export detailed time entries.
 
-Every week you should export your time entries and convert to the correct format. 
-
-In toggl
+Access Toggl and
 - Go to Reports, and go to Detailed tab. 
 - Select the current week, and filter by your own time entries. 
 - Export the csv file.

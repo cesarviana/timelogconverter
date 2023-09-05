@@ -6,6 +6,15 @@ dayjs.extend(weekOfYear);
 const createCsvWriter = require("csv-writer").createObjectCsvWriter;
 
 const MISSING_TYPE = "### Missing type ###";
+const HEADER = [
+  { id: "week", title: "Week" },
+  { id: "month", title: "Month" },
+  { id: "quarter", title: "Quarter" },
+  { id: "storyId", title: "Story ID" },
+  { id: "storyTitle", title: "Story Title" },
+  { id: "type", title: "Type" },
+  { id: "duration", title: "Hours" },
+];
 
 async function convertCSV(inputFileName) {
   console.log("Reading " + inputFileName);
@@ -13,7 +22,7 @@ async function convertCSV(inputFileName) {
   const timelogData = await _summarizeDetailedDataToWeekTimelog(
     csvTimelogProvider.getTimeEntries()
   );
-  await _writeData(timelogData);
+  _writeData(timelogData);
   return timelogData;
 }
 
@@ -22,13 +31,14 @@ async function convertToggl() {
   const timelogData = await _summarizeDetailedDataToWeekTimelog(
     togglWeekTimelogProvider.getTimeEntries()
   );
+  _writeData(timelogData);
   return timelogData;
 }
 
 async function _summarizeDetailedDataToWeekTimelog(rowsStream) {
   const storiesMap = new Map();
   for await (const row of rowsStream) {
-    const tags = row.tags.join(',').toLowerCase();
+    const tags = row.tags.join(",").toLowerCase();
     const startDate = dayjs(row.startDate);
 
     const taskIdMatch = row.description.match(/#(\d+)/);
@@ -79,26 +89,16 @@ function _formatDuration(seconds) {
   return `${hours}.${decimalMinutes}`;
 }
 
-async function _writeData(outputData) {
-  const outputFileName = `output.csv`;
-  const csvWriter = createCsvWriter({
-    path: outputFileName,
-    header: [
-      { id: "week", title: "Week" },
-      { id: "month", title: "Month" },
-      { id: "quarter", title: "Quarter" },
-      { id: "storyId", title: "Story ID" },
-      { id: "storyTitle", title: "Story Title" },
-      { id: "type", title: "Type" },
-      { id: "duration", title: "Hours" },
-    ],
+function _writeData(timelogData) {
+  const headerRow = HEADER.map(({ title }) => title).join(",");
+  console.log(headerRow);
+  timelogData.forEach((row) => {
+    const stringRow = HEADER.map(({ id }) => row[id]).join(",");
+    console.log(stringRow);
   });
-
-  await csvWriter.writeRecords(outputData);
-  console.log(`Conversion complete. Output written to ${outputFileName}`);
-  return outputData;
 }
 
 module.exports = {
-  convertCSV, convertToggl
+  convertCSV,
+  convertToggl,
 };
