@@ -67,11 +67,6 @@ async function _summarizeDetailedDataToWeekTimelog(rowsStream) {
       const typeFound = pattern.test(tags);
       if (typeFound) {
         story.type = tags.match(pattern)[0];
-      } else {
-        const badRow = JSON.stringify(row) + " missing tag";
-        console.warn(
-          `Missing tags. All entries must contain "Chore", "Bug" or "Feature". \n ${badRow}`
-        );
       }
     }
   }
