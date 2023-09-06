@@ -1,6 +1,6 @@
-const chai = require("chai");
-const chaiAsPromised = require("chai-as-promised");
-const Toggl = require("../providers/Toggl");
+import chai from "chai";
+import chaiAsPromised from "chai-as-promised";
+import Toggl from "../providers/Toggl";
 chai.use(chaiAsPromised);
 const { expect } = chai;
 

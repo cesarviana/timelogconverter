@@ -6,10 +6,10 @@
   "author": "Cesar Viana",
   "license": "MIT",
   "scripts": {
-    "test": "node ./node_modules/mocha/bin/mocha --require dotenv/config tests/**/*.test.js",
-    "testGrep": "node ./node_modules/mocha/bin/mocha --require dotenv/config tests/**/*.test.js --grep TEST",
-    "csv": "node index.js --csv",
-    "toggl": "node index.js"
+    "test": "node ./node_modules/mocha/bin/mocha --require dotenv/config dist/tests/**/*.test.js",
+    "testGrep": "node ./node_modules/mocha/bin/mocha --require dotenv/config dist/tests/**/*.test.js --grep TEST",
+    "csv": "node dist/index.js --csv",
+    "toggl": "node dist/index.js"
   },
   "dependencies": {
     "axios": "^1.5.0",
@@ -21,7 +21,14 @@
     "yargs": "^17.7.2"
   },
   "devDependencies": {
+    "@types/chai": "^4.3.6",
+    "@types/chai-as-promised": "^7.1.6",
+    "@types/mocha": "^10.0.1",
+    "@types/node": "^20.5.9",
+    "@types/yargs": "^17.0.24",
     "dotenv": "^16.3.1",
-    "mocha": "^10.2.0"
+    "mocha": "^10.2.0",
+    "ts-node": "^10.9.1",
+    "typescript": "^5.2.2"
   }
 }

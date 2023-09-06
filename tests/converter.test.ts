@@ -1,11 +1,14 @@
-const chai = require("chai");
-const chaiAsPromised = require("chai-as-promised");
+import chai from "chai";
+import chaiAsPromised from "chai-as-promised";
 chai.use(chaiAsPromised);
 const { expect } = chai;
 
-const createCsvWriter = require("csv-writer").createArrayCsvWriter;
+import { createArrayCsvWriter as createCsvWriter } from "csv-writer";
+import { CsvWriter } from "csv-writer/src/lib/csv-writer";
+
 const fs = require("fs").promises;
-const { convertCSV, convertToggl } = require("../converter");
+
+import { convertCSV, convertToggl } from "../converter";
 
 describe("test conversion", () => {
   describe("toggl", () => {
@@ -16,11 +19,11 @@ describe("test conversion", () => {
   });
 
   describe("csv", () => {
-    const TEST_FILE = "toggl_test.csv";
+    const TEST_FILE: string = "toggl_test.csv";
 
-    let csvWriter;
+    let csvWriter: CsvWriter<string[]>;
 
-    async function writeRecords(records) {
+    async function writeRecords(records: string[][]) {
       await csvWriter.writeRecords(records);
     }
     beforeEach(async () => {

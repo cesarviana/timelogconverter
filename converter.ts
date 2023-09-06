@@ -1,9 +1,9 @@
-const dayjs = require("dayjs");
-const weekOfYear = require("dayjs/plugin/weekOfYear");
-const CsvTimelogProvider = require("./providers/CsvTimelogProvider");
-const TogglWeekTimelogProvider = require("./providers/TogglWeekTimelogProvider");
+import dayjs from "dayjs";
+import weekOfYear from "dayjs/plugin/weekOfYear";
+import CsvTimelogProvider from "./providers/CsvTimelogProvider";
+import TogglWeekTimelogProvider from "./providers/TogglWeekTimelogProvider";
+import { TimeEntriesStream } from "./types/TimeEntriesStream";
 dayjs.extend(weekOfYear);
-const createCsvWriter = require("csv-writer").createObjectCsvWriter;
 
 const MISSING_TYPE = "### Missing type ###";
 const HEADER = [
@@ -16,7 +16,18 @@ const HEADER = [
   { id: "duration", title: "Hours" },
 ];
 
-async function convertCSV(inputFileName) {
+type SpreadsheetRow = {
+  week: string;
+  month: string;
+  quarter: string;
+  storyId: string;
+  storyTitle: string;
+  type: string;
+  duration: string;
+  [key: string]: string;
+};
+
+export async function convertCSV(inputFileName: string) {
   console.log("Reading " + inputFileName);
   const csvTimelogProvider = new CsvTimelogProvider(inputFileName);
   const timelogData = await _summarizeDetailedDataToWeekTimelog(
@@ -26,7 +37,7 @@ async function convertCSV(inputFileName) {
   return timelogData;
 }
 
-async function convertToggl() {
+export async function convertToggl() {
   const togglWeekTimelogProvider = new TogglWeekTimelogProvider();
   const timelogData = await _summarizeDetailedDataToWeekTimelog(
     togglWeekTimelogProvider.getTimeEntries()
@@ -35,7 +46,9 @@ async function convertToggl() {
   return timelogData;
 }
 
-async function _summarizeDetailedDataToWeekTimelog(rowsStream) {
+async function _summarizeDetailedDataToWeekTimelog(
+  rowsStream: TimeEntriesStream
+): Promise<SpreadsheetRow[]> {
   const storiesMap = new Map();
   for await (const row of rowsStream) {
     const tags = row.tags.join(",").toLowerCase();
@@ -66,7 +79,7 @@ async function _summarizeDetailedDataToWeekTimelog(rowsStream) {
       const pattern = /chore|bug|feature/;
       const typeFound = pattern.test(tags);
       if (typeFound) {
-        story.type = tags.match(pattern)[0];
+        story.type = pattern.exec(tags)?.[0];
       }
     }
   }
@@ -77,23 +90,20 @@ async function _summarizeDetailedDataToWeekTimelog(rowsStream) {
   return outputData;
 }
 
-function _formatDuration(seconds) {
+function _formatDuration(seconds: number) {
   const hours = Math.floor(seconds / 3600);
   const minutes = Math.floor((seconds % 3600) / 60);
   const decimalMinutes = (minutes / 60).toFixed(2).replace("0.", "");
   return `${hours}.${decimalMinutes}`;
 }
 
-function _writeData(timelogData) {
+function _writeData(rows: SpreadsheetRow[]) {
   const headerRow = HEADER.map(({ title }) => title).join(",");
   console.log(headerRow);
-  timelogData.forEach((row) => {
-    const stringRow = HEADER.map(({ id }) => row[id]).join(",");
+  rows.forEach((entry) => {
+    const stringRow = HEADER.map(({ id: headerId }) => entry[headerId]).join(
+      ","
+    );
     console.log(stringRow);
   });
 }
-
-module.exports = {
-  convertCSV,
-  convertToggl,
-};
