@@ -23,15 +23,13 @@ export default class Toggl {
     });
   }
 
-  async getWeekEntries(): Promise<TaskEntry[]> {
-    const end_date = dayjs().endOf("week").format("YYYY-MM-DD");
-    const start_date = dayjs().startOf("week").format("YYYY-MM-DD");
+  async getEntries(startDate: Date, endDate: Date = new Date()): Promise<TaskEntry[]> {
     const response = await this.axiosInstance.post(
       `reports/api/v3/workspace/${this.workspaceId}/search/time_entries`,
       {
         // client_ids: ["integer"],
-        start_date,
-        end_date,
+        start_date: dayjs(startDate).format('YYYY-MM-DD'),
+        end_date: dayjs(endDate).format('YYYY-MM-DD'),
         user_ids: [this.userId],
       }
     );

@@ -13,7 +13,7 @@ import { convertCSV, convertToggl } from "../converter";
 describe("test conversion", () => {
   describe("toggl", () => {
     it("converts data from toggl", async () => {
-      const outputData = await convertToggl();
+      const outputData = await convertToggl(new Date());
       expect(outputData).to.be.an("array");
     });
   });

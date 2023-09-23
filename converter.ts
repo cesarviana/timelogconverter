@@ -1,7 +1,7 @@
 import dayjs from "dayjs";
 import weekOfYear from "dayjs/plugin/weekOfYear";
 import CsvTimelogProvider from "./providers/CsvTimelogProvider";
-import TogglWeekTimelogProvider from "./providers/TogglWeekTimelogProvider";
+import TogglTimelogProvider from "./providers/TogglTimelogProvider";
 import { TimeEntriesStream } from "./types/TimeEntriesStream";
 dayjs.extend(weekOfYear);
 
@@ -37,10 +37,10 @@ export async function convertCSV(inputFileName: string) {
   return timelogData;
 }
 
-export async function convertToggl() {
-  const togglWeekTimelogProvider = new TogglWeekTimelogProvider();
+export async function convertToggl(startDate: Date) {
+  const togglTimelogProvider = new TogglTimelogProvider();
   const timelogData = await _summarizeDetailedDataToWeekTimelog(
-    togglWeekTimelogProvider.getTimeEntries()
+    togglTimelogProvider.getTimeEntries(startDate)
   );
   _writeData(timelogData);
   return timelogData;

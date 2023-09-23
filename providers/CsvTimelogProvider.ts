@@ -2,6 +2,8 @@ import TimelogProvider from "./TimelogProvider";
 
 import fs from "fs";
 import csv from "csv-parser";
+import dayjs from "dayjs";
+import { MIN_DATE } from "../constants";
 
 export default class CsvTimelogProvider implements TimelogProvider {
   csvFile: string;
@@ -10,15 +12,20 @@ export default class CsvTimelogProvider implements TimelogProvider {
     this.csvFile = csvFile;
   }
 
-  async *getTimeEntries() {
+  async *getTimeEntries(startDate: Date = MIN_DATE) {
     const detailedRowsStream = fs.createReadStream(this.csvFile).pipe(csv());
     for await (const row of detailedRowsStream) {
-      yield {
-        tags: row.Tags.split(","),
-        startDate: row["Start date"],
-        description: row.Description,
-        duration: this._getDurationInSeconds(row.Duration),
-      };
+      const rowStartDate = dayjs(row["Start date"]);
+      const isValidDate =
+        rowStartDate.isAfter(startDate) || rowStartDate.isSame(startDate);
+      if (isValidDate) {
+        yield {
+          tags: row.Tags.split(","),
+          startDate: row["Start date"],
+          description: row.Description,
+          duration: this._getDurationInSeconds(row.Duration),
+        };
+      }
     }
   }
 

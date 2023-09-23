@@ -3,13 +3,12 @@ import { Tag } from "../types/Toggl";
 import TimelogProvider from "./TimelogProvider";
 import Toggl from "./Toggl";
 
-export default class TogglWeekTimelogProvider implements TimelogProvider {
-  async *getTimeEntries(): TimeEntriesStream {
+export default class TogglTimelogProvider implements TimelogProvider {
+  async *getTimeEntries(startDate: Date): TimeEntriesStream {
     const toggl = Toggl.instance();
 
     const tags = await toggl.getTags();
-
-    const toggleWeekEntries = await toggl.getWeekEntries();
+    const toggleWeekEntries = await toggl.getEntries(startDate);
     for (const togglEntry of toggleWeekEntries) {
       yield {
         tags: this._getTagNames(tags, togglEntry.tag_ids),
@@ -31,4 +30,4 @@ export default class TogglWeekTimelogProvider implements TimelogProvider {
   }
 }
 
-module.exports = TogglWeekTimelogProvider;
+module.exports = TogglTimelogProvider;
